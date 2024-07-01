@@ -4,13 +4,13 @@ resource "aws_cloudfront_distribution" "mywebsite-distribution" {
     domain_name = aws_s3_bucket.bucket.bucket_regional_domain_name
     origin_id   = aws_s3_bucket.bucket.bucket_regional_domain_name
   
-  s3_origin_config {
-    origin_access_identity = aws_cloudfront_origin_access_identity.origin_access_identity.cloudfront_access_identity_path
+      s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.origin_access_identity.cloudfront_access_identity_path
+    }
   }
-}
-
+  aliases = ["kingdavid.me"]
   enabled = true
-  is_ipv6_enabled = true
+  is_ipv6_enabled = false
   comment = "My website distribution"
   default_root_object = "index.html"
 
@@ -41,8 +41,13 @@ resource "aws_cloudfront_distribution" "mywebsite-distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = false
+    minimum_protocol_version = "TLSv1.2_2021"
+    ssl_support_method = "sni-only"
+    acm_certificate_arn = aws_acm_certificate.mycert.arn
   }
+
+  depends_on = [ aws_s3_bucket.bucket ]
 }
 
 // CLOUD FRONT ORIGIN ACCESS IDENTITY
@@ -56,20 +61,21 @@ resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
 resource "aws_s3_bucket_policy" "bucket_policy" {
   bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow"
-        Principal = "*"
-        Action = [
-          "s3:GetObject"
-        ]
-        Resource = [
-          "${aws_s3_bucket.bucket.arn}/*"
-        ]
+        Sid = "AllowCloudFrontServicePrincipalReadOnly",
+        Effect = "Allow",
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn
+        },
+        Action = "s3:GetObject",
+        Resource = "${aws_s3_bucket.bucket.arn}/*"
       }
     ]
   })
+
+  depends_on = [ aws_cloudfront_origin_access_identity.origin_access_identity, aws_s3_bucket.bucket]
 }
 
 output "cloudfront_domain_name" {

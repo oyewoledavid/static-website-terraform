@@ -61,26 +61,6 @@ resource "aws_iam_role_policy" "cloudfront_policy" {
 EOF
 }
 
-# IAM Role Policy for API Gateway
-resource "aws_iam_role_policy" "api_gateway_policy" {
-    name   = "api-gateway-policy"
-    role   = aws_iam_role.kingdavid_role.id
-
-    policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "apigateway:*"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
 
 # IAM Role Policy for Route53
 resource "aws_iam_role_policy" "route53_policy" {
@@ -95,6 +75,26 @@ resource "aws_iam_role_policy" "route53_policy" {
             "Effect": "Allow",
             "Action": [
                 "route53:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+# IAM Role Policy for Certificate Manager
+resource "aws_iam_role_policy" "certificate_manager_policy" {
+    name   = "certificate-manager-policy"
+    role   = aws_iam_role.kingdavid_role.id
+
+    policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "acm:*"
             ],
             "Resource": "*"
         }

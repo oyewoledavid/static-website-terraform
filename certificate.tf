@@ -17,14 +17,18 @@ resource "aws_route53_record" "mycert_validation" {
     }
   }
 
-    zone_id = aws_route53_zone.mywebsite_zone.zone_id
+    zone_id = aws_route53_zone.primary.zone_id
     name    = each.value.name
     type    = each.value.type
     records = [each.value.record]
     ttl     = 60
+
+    depends_on = [ aws_acm_certificate.mycert ]
 }
 
 resource "aws_acm_certificate_validation" "mycert_validation" {
   certificate_arn         = aws_acm_certificate.mycert.arn
   validation_record_fqdns = [for record in aws_route53_record.mycert_validation : record.fqdn]
+
+  depends_on = [ aws_route53_record.mycert_validation, aws_acm_certificate.mycert]
 }

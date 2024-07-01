@@ -15,33 +15,13 @@ resource "aws_s3_object" "website_files" {
     content_type = each.value
 }
 
-output "bucket_id" {
-    value = aws_s3_bucket.bucket.id
-  
+resource "aws_s3_account_public_access_block" "block_access" {
+  block_public_acls = true
+  block_public_policy = true
+  ignore_public_acls = true
+  restrict_public_buckets = true
+
 }
-
-
-# BUCKET POLICY TO ALLOW ACCESS FROM OTHERS
-data "aws_iam_policy_document" "allow_access_from_others" {
-  statement {
-    actions = [
-      "s3:GetObject",
-      "s3:ListBucket",
-    ]
-
-    resources = [
-      aws_s3_bucket.bucket.arn,
-      "${aws_s3_bucket.bucket.arn}/*",
-    ]
-
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-  
-  }
-}
-
 resource "aws_s3_bucket_website_configuration" "mywebsite" {
   bucket = aws_s3_bucket.bucket.id
   index_document {
@@ -52,23 +32,3 @@ resource "aws_s3_bucket_website_configuration" "mywebsite" {
   }
   
 }
-
-// BUCKET POLICY TO ALLOW PUBLIC ACCESS
-data "aws_iam_policy_document" "public_access" {
-  statement {
-    actions   = ["s3:GetObject"]
-    resources = [aws_s3_bucket.bucket.arn]
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-    effect = "Allow"
-  }
-}
-
-
-# resource "aws_s3_bucket_policy" "bucket_policy" {
-#   bucket = aws_s3_bucket.bucket.id
-#   policy = data.aws_iam_policy_document.public_access.json
-# }
-

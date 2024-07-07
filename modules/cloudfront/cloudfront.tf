@@ -1,14 +1,14 @@
 
 resource "aws_cloudfront_distribution" "mywebsite-distribution" {
   origin {
-    domain_name = aws_s3_bucket.bucket.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket.bucket.bucket_regional_domain_name
+    domain_name = var.s3_bucket_domain_name
+    origin_id   = var.s3_bucket_origin_id
   
       s3_origin_config {
       origin_access_identity = aws_cloudfront_origin_access_identity.origin_access_identity.cloudfront_access_identity_path
     }
   }
-  aliases = ["kingdavid.me"]
+  aliases = [var.domain_name]
   enabled = true
   is_ipv6_enabled = false
   comment = "My website distribution"
@@ -17,7 +17,7 @@ resource "aws_cloudfront_distribution" "mywebsite-distribution" {
   default_cache_behavior {
     allowed_methods = ["GET", "HEAD"]
     cached_methods = ["GET", "HEAD"]
-    target_origin_id = aws_s3_bucket.bucket.bucket_regional_domain_name
+    target_origin_id = var.s3_bucket_origin_id
 
     forwarded_values {
       query_string = false
@@ -44,10 +44,10 @@ resource "aws_cloudfront_distribution" "mywebsite-distribution" {
     cloudfront_default_certificate = false
     minimum_protocol_version = "TLSv1.2_2021"
     ssl_support_method = "sni-only"
-    acm_certificate_arn = aws_acm_certificate.mycert.arn
+    acm_certificate_arn = var.acm_certificate_arn
   }
 
-  depends_on = [ aws_s3_bucket.bucket ]
+  depends_on = [var.bucket_name]
 }
 
 // CLOUD FRONT ORIGIN ACCESS IDENTITY
@@ -59,7 +59,7 @@ resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
 // BUCKET POLICY TO ALLOW CLOUDFRONT TO ACCESS THE BUCKET
 
 resource "aws_s3_bucket_policy" "bucket_policy" {
-  bucket = aws_s3_bucket.bucket.id
+  bucket = var.bucket_name
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -70,17 +70,10 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
           AWS = aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn
         },
         Action = "s3:GetObject",
-        Resource = "${aws_s3_bucket.bucket.arn}/*"
+        Resource  = "${var.s3_bucket_arn}/*"
       }
     ]
   })
 
-  depends_on = [ aws_cloudfront_origin_access_identity.origin_access_identity, aws_s3_bucket.bucket]
+  # depends_on = [ aws_cloudfront_origin_access_identity.origin_access_identity, module.aws_s3_bucket.bucket_name ]
 }
-
-output "cloudfront_domain_name" {
-  value = aws_cloudfront_distribution.mywebsite-distribution.domain_name
-  
-  
-}
-

@@ -1,10 +1,7 @@
 resource "aws_acm_certificate" "mycert" {
-  domain_name       = "kingdavid.me"
+  domain_name       = var.domain_name
   validation_method = "DNS"
 
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 
@@ -17,7 +14,7 @@ resource "aws_route53_record" "mycert_validation" {
     }
   }
 
-    zone_id = aws_route53_zone.primary.zone_id
+    zone_id = var.zone_id
     name    = each.value.name
     type    = each.value.type
     records = [each.value.record]
